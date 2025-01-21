@@ -252,6 +252,7 @@ pub const RuntimeTranspilerStore = struct {
         input_specifier: bun.String,
         path: Fs.Path,
         referrer: bun.String,
+        loader: bun.options.Loader,
     ) *anyopaque {
         var job: *TranspilerJob = this.store.get();
         const owned_path = Fs.Path.init(bun.default_allocator.dupe(u8, path.text) catch unreachable);
@@ -263,7 +264,7 @@ pub const RuntimeTranspilerStore = struct {
             .non_threadsafe_referrer = referrer,
             .vm = vm,
             .log = logger.Log.init(bun.default_allocator),
-            .loader = vm.transpiler.options.loader(owned_path.name.ext),
+            .loader = loader,
             .promise = JSC.Strong.create(JSC.JSValue.fromCell(promise), globalObject),
             .poll_ref = .{},
             .fetcher = TranspilerJob.Fetcher{
@@ -1482,7 +1483,9 @@ pub const ModuleLoader = struct {
         var jsc_vm = global.bunVM();
         const filename = str.toUTF8(jsc_vm.allocator);
         defer filename.deinit();
-        const loader = jsc_vm.transpiler.options.loader(Fs.PathName.init(filename.slice()).ext).toAPI();
+        // This is called from handleOnLoadResultNotPromise. Is this correct behaviour? Or should handleOnLoadResultNotPromise
+        // be called with a loader in order to not need this fn?
+        const loader = jsc_vm.transpiler.options.loaderForExtension(Fs.PathName.init(filename.slice()).ext).toAPI();
         if (loader == .file) {
             return Api.Loader.js;
         }
@@ -2389,6 +2392,7 @@ pub const ModuleLoader = struct {
                         specifier_ptr.dupeRef(),
                         path,
                         referrer.dupeRef(),
+                        concurrent_loader,
                     );
                 }
             }
