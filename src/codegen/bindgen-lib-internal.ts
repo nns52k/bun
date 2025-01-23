@@ -886,8 +886,9 @@ function snapshotCallerLocation(): string {
 }
 
 function stackTraceFileName(line: string): string {
-  if (line.includes("/Users/pfg")) return line.match(/(\/Users\/[\/A-Za-z0-9\.\_]+)/)[1];
-  return / \(((?:[A-Za-z]:)?.*?)[:)]/.exec(line)![1].replaceAll("\\", "/");
+  const match = /(?:at\s+|\()(.:?[^:\n(\)]*)[^(\n]*$/i.exec(line);
+  assert(match, `Couldn't extract filename from stack trace line: ${line}`);
+  return match[1].replaceAll("\\", "/");
 }
 
 export type CAbiType =

@@ -176,6 +176,7 @@ pub fn quoteForJSON(text: []const u8, output_: MutableString, comptime ascii_onl
 }
 
 pub fn writePreQuotedString(comptime encoding: strings.unicode.Encoding, text: []const encoding.Unit(), comptime Writer: type, writer: Writer, comptime quote_char: u8, comptime ascii_only: bool, comptime json: bool) !void {
+    if (comptime json and quote_char != '"') @compileError("for json, quote_char must be '\"'");
     if (Environment.allow_assert) bun.assert(strings.unicode.isValid(encoding, text));
 
     var i: usize = 0;
@@ -1759,10 +1760,8 @@ fn NewPrinter(
             if (!import_options.isMissing()) {
                 // since we previously stripped type, it is a breaking change to
                 // enable this for non-bun platforms
-                if (is_bun_platform or bun.FeatureFlags.breaking_changes_1_2) {
-                    p.printWhitespacer(ws(", "));
-                    p.printExpr(import_options, .comma, .{});
-                }
+                p.printWhitespacer(ws(", "));
+                p.printExpr(import_options, .comma, .{});
             }
 
             p.print(")");
@@ -2251,10 +2250,8 @@ fn NewPrinter(
                         if (!e.options.isMissing()) {
                             // since we previously stripped type, it is a breaking change to
                             // enable this for non-bun platforms
-                            if (is_bun_platform or bun.FeatureFlags.breaking_changes_1_2) {
-                                p.printWhitespacer(ws(", "));
-                                p.printExpr(e.options, .comma, .{});
-                            }
+                            p.printWhitespacer(ws(", "));
+                            p.printExpr(e.options, .comma, .{});
                         }
 
                         // TODO:
