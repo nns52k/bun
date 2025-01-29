@@ -572,6 +572,7 @@ function spawnSync(file, args, options) {
       stdio: bunStdio,
       windowsVerbatimArguments: options.windowsVerbatimArguments,
       windowsHide: options.windowsHide,
+      argv0: options.argv0,
     });
   } catch (err) {
     error = err;
@@ -959,11 +960,7 @@ function normalizeSpawnArguments(file, args, options) {
   }
 
   // Handle argv0
-  if (typeof options.argv0 === "string") {
-    ArrayPrototypeUnshift.$call(args, options.argv0);
-  } else {
-    ArrayPrototypeUnshift.$call(args, file);
-  }
+  ArrayPrototypeUnshift.$call(args, file);
 
   const env = options.env || process.env;
   const envPairs = {};
@@ -1010,6 +1007,7 @@ function normalizeSpawnArguments(file, args, options) {
     file,
     windowsHide: !!options.windowsHide,
     windowsVerbatimArguments: !!windowsVerbatimArguments,
+    argv0: options.argv0,
   };
 }
 
