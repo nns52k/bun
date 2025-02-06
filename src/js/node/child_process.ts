@@ -1318,6 +1318,7 @@ class ChildProcess extends EventEmitter {
         }
       }
     } catch (ex) {
+      if ((ex as Error).name !== "SystemError") throw ex;
       this.#handle = null;
       process.nextTick(() => {
         this.emit("error", ex);
