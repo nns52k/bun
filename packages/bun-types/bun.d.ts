@@ -1436,6 +1436,28 @@ declare module "bun" {
     type?: string;
 
     /**
+     * By default, Amazon S3 uses the STANDARD Storage Class to store newly created objects.
+     *
+     * @example
+     *    // Setting explicit Storage class
+     *     const file = s3("my-file.json", {
+     *       storageClass: "STANDARD_IA"
+     *     });
+     */
+    storageClass?:
+      | "STANDARD"
+      | "DEEP_ARCHIVE"
+      | "EXPRESS_ONEZONE"
+      | "GLACIER"
+      | "GLACIER_IR"
+      | "INTELLIGENT_TIERING"
+      | "ONEZONE_IA"
+      | "OUTPOSTS"
+      | "REDUCED_REDUNDANCY"
+      | "SNOW"
+      | "STANDARD_IA";
+
+    /**
      * @deprecated The size of the internal buffer in bytes. Defaults to 5 MiB. use `partSize` and `queueSize` instead.
      */
     highWaterMark?: number;
@@ -1987,35 +2009,51 @@ declare module "bun" {
    */
   type SQLOptions = {
     /** Connection URL (can be string or URL object) */
-    url: URL | string;
+    url?: URL | string;
     /** Database server hostname */
-    host: string;
+    host?: string;
+    /** Database server hostname (alias for host) */
+    hostname?: string;
     /** Database server port number */
-    port: number | string;
+    port?: number | string;
     /** Database user for authentication */
-    username: string;
+    username?: string;
+    /** Database user for authentication (alias for username) */
+    user?: string;
     /** Database password for authentication */
-    password: string;
+    password?: string;
+    /** Database password for authentication (alias for password) */
+    pass?: string;
     /** Name of the database to connect to */
-    database: string;
+    database?: string;
+    /** Name of the database to connect to (alias for database) */
+    db?: string;
     /** Database adapter/driver to use */
-    adapter: string;
-    /** Maximum time in milliseconds to wait for connection to become available */
-    idleTimeout: number;
-    /** Maximum time in milliseconds to wait when establishing a connection */
-    connectionTimeout: number;
-    /** Maximum lifetime in milliseconds of a connection */
-    maxLifetime: number;
+    adapter?: string;
+    /** Maximum time in seconds to wait for connection to become available */
+    idleTimeout?: number;
+    /** Maximum time in seconds to wait for connection to become available (alias for idleTimeout) */
+    idle_timeout?: number;
+    /** Maximum time in seconds to wait when establishing a connection */
+    connectionTimeout?: number;
+    /** Maximum time in seconds to wait when establishing a connection (alias for connectionTimeout) */
+    connection_timeout?: number;
+    /** Maximum lifetime in seconds of a connection */
+    maxLifetime?: number;
+    /** Maximum lifetime in seconds of a connection (alias for maxLifetime) */
+    max_lifetime?: number;
     /** Whether to use TLS/SSL for the connection */
-    tls: boolean;
+    tls?: TLSOptions | boolean;
+    /** Whether to use TLS/SSL for the connection (alias for tls) */
+    ssl?: TLSOptions | boolean;
     /** Callback function executed when a connection is established */
-    onconnect: (client: SQL) => void;
+    onconnect?: (client: SQL) => void;
     /** Callback function executed when a connection is closed */
-    onclose: (client: SQL) => void;
+    onclose?: (client: SQL) => void;
     /** Maximum number of connections in the pool */
-    max: number;
+    max?: number;
     /** By default values outside i32 range are returned as strings. If this is true, values outside i32 range are returned as BigInts. */
-    bigint: boolean;
+    bigint?: boolean;
   };
 
   /**
@@ -3712,13 +3750,19 @@ declare module "bun" {
     port?: string | number;
 
     /**
-     * If the `SO_REUSEPORT` flag should be set.
+     * Whether the `SO_REUSEPORT` flag should be set.
      *
      * This allows multiple processes to bind to the same port, which is useful for load balancing.
      *
      * @default false
      */
     reusePort?: boolean;
+
+    /**
+     * Whether the `IPV6_V6ONLY` flag should be set.
+     * @default false
+     */
+    ipv6Only?: boolean;
 
     /**
      * What hostname should the server listen on?
@@ -6950,7 +6994,7 @@ declare module "bun" {
    * Types for `bun.lock`
    */
   type BunLockFile = {
-    lockfileVersion: 0;
+    lockfileVersion: 0 | 1;
     workspaces: {
       [workspace: string]: BunLockFileWorkspacePackage;
     };
@@ -6962,10 +7006,11 @@ declare module "bun" {
      * ```
      * INFO = { prod/dev/optional/peer dependencies, os, cpu, libc (TODO), bin, binDir }
      *
+     * // first index is resolution for each type of package
      * npm         -> [ "name@version", registry (TODO: remove if default), INFO, integrity]
      * symlink     -> [ "name@link:path", INFO ]
      * folder      -> [ "name@file:path", INFO ]
-     * workspace   -> [ "name@workspace:path", INFO ]
+     * workspace   -> [ "name@workspace:path" ] // workspace is only path
      * tarball     -> [ "name@tarball", INFO ]
      * root        -> [ "name@root:", { bin, binDir } ]
      * git         -> [ "name@git+repo", INFO, .bun-tag string (TODO: remove this) ]
@@ -6983,6 +7028,8 @@ declare module "bun" {
     optionalDependencies?: Record<string, string>;
     peerDependencies?: Record<string, string>;
     optionalPeers?: string[];
+    bin?: string | Record<string, string>;
+    binDir?: string;
   };
 
   type BunLockFileWorkspacePackage = BunLockFileBasePackageInfo & {
@@ -6993,8 +7040,6 @@ declare module "bun" {
   type BunLockFilePackageInfo = BunLockFileBasePackageInfo & {
     os?: string | string[];
     cpu?: string | string[];
-    bin?: Record<string, string>;
-    binDir?: string;
     bundled?: true;
   };
 
@@ -7002,10 +7047,12 @@ declare module "bun" {
   type BunLockFilePackageArray =
     /** npm */
     | [pkg: string, registry: string, info: BunLockFilePackageInfo, integrity: string]
-    /** symlink, folder, tarball, workspace */
+    /** symlink, folder, tarball */
     | [pkg: string, info: BunLockFilePackageInfo]
+    /** workspace */
+    | [pkg: string]
     /** git, github */
     | [pkg: string, info: BunLockFilePackageInfo, bunTag: string]
     /** root */
-    | [pkg: string, info: Pick<BunLockFilePackageInfo, "bin" | "binDir">];
+    | [pkg: string, info: Pick<BunLockFileBasePackageInfo, "bin" | "binDir">];
 }
